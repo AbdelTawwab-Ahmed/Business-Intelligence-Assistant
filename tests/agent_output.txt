@@ -1,0 +1,6 @@
+
+Q1: إيه أكتر فرع بيرتجع منتجات؟
+
+A1: أكتر فرع بيرجع منتجات هو **NileMart Tanta** بـ 269 وحدة مرتجعة.  
+
+ده بناءً على قاعدة “by branch” اللي بنستخدم فيها COALESCE(orders.branch_id, orders.fulfillment_branch_id) علشان نحدد الفرع للطلبات (اللي فيها branch_id NULL بنرجع للفرع اللي نفّذ الطلب).

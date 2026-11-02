@@ -1,0 +1,10 @@
+langchain
+langchain-google-genai
+langchain-groq
+langgraph
+langchain-mcp-adapters
+mcp
+psycopg2-binary
+streamlit
+python-dotenv
+pandas
