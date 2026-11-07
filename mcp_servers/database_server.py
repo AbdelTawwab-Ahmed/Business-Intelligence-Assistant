@@ -101,14 +101,12 @@ def get_schema_info() -> str:
     return _cache["doc"]
 
 
-@mcp.tool()
-def run_sql_query(query: str) -> str:
-    """Run a read-only SELECT query (max 200 rows). Returns JSON rows or an error message."""
+def execute_readonly(query: str) -> list[dict]:
     q = query.strip().rstrip(";").strip()
     if not re.match(r"^(select|with)\b", q, re.I):
-        return json.dumps({"error": "Only SELECT/WITH queries are allowed."})
+        raise ValueError("Only SELECT/WITH queries are allowed.")
     if ";" in q or FORBIDDEN.search(q):
-        return json.dumps({"error": "Query contains forbidden keywords or multiple statements."})
+        raise ValueError("Query contains forbidden keywords or multiple statements.")
     conn = None
     try:
         conn = psycopg2.connect(os.getenv("DATABASE_URL"))
@@ -116,13 +114,20 @@ def run_sql_query(query: str) -> str:
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
             cur.execute("SET statement_timeout = 10000;")
             cur.execute(q)
-            rows = cur.fetchmany(MAX_ROWS)
-        return json.dumps({"row_count": len(rows), "rows": rows}, default=str, ensure_ascii=False)
-    except Exception as e:
-        return json.dumps({"error": str(e)})
+            return cur.fetchmany(MAX_ROWS)
     finally:
         if conn:
             conn.close()
+
+
+@mcp.tool()
+def run_sql_query(query: str) -> str:
+    """Run a read-only SELECT query (max 200 rows). Returns JSON rows or an error message."""
+    try:
+        rows = execute_readonly(query)
+        return json.dumps({"row_count": len(rows), "rows": rows}, default=str, ensure_ascii=False)
+    except Exception as e:
+        return json.dumps({"error": str(e)})
     
 
 if __name__ == "__main__":

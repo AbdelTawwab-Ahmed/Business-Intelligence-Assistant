@@ -4,7 +4,6 @@ from dotenv import load_dotenv
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_groq import ChatGroq
 from langchain.agents.middleware import ModelFallbackMiddleware
-from langchain_mcp_adapters.client import MultiServerMCPClient
 from langchain.agents import create_agent
 
 
@@ -28,22 +27,17 @@ ANSWER STYLE
 - If the result is empty, say so and explain which filter likely caused it.
 """
 
-primary_model = ChatGoogleGenerativeAI(model= "gemini-2.5-flash", api_key = os.getenv("GOOGLE_API_KEY"), temperature=0)
+fallback_model = ChatGoogleGenerativeAI(model= "gemini-2.5-flash", api_key = os.getenv("GOOGLE_API_KEY"), temperature=0)
 
-fallback_model = ChatGroq(model= "openai/gpt-oss-120b", api_key= os.getenv("GROQ_API_KEY"), temperature=0)
+primary_model = ChatGroq(model= "openai/gpt-oss-120b", api_key= os.getenv("GROQ_API_KEY"), temperature=0)
 
-async def build_agent():
-    client = MultiServerMCPClient({
-        "database": {
-            "transport": "stdio",
-            "command": sys.executable,
-            "args": [str(ROOT / "mcp_servers" / "database_server.py")],
-        }
-    })
-
-    tools = await client.get_tools()
-
-    return create_agent(primary_model, tools, system_prompt=SYSTEM_PROMPT, middleware=[ModelFallbackMiddleware(fallback_model)])
+def build_sql_agent(tools):
+    return create_agent(
+        primary_model,
+        tools,
+        system_prompt=SYSTEM_PROMPT, name="sql_analyst",
+        middleware=[ModelFallbackMiddleware(fallback_model)],
+    )
 
 def extract_text(message) -> str:
     c = message.content

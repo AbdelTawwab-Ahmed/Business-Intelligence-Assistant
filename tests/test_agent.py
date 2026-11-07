@@ -1,5 +1,5 @@
 import asyncio
-from agents.sql_analyst import build_agent, extract_text
+from agents.sql_analyst import build_sql_agent, extract_text
 
 
 QUESTIONS = [
@@ -10,7 +10,7 @@ QUESTIONS = [
 
 
 async def main():
-    agent = await build_agent()
+    agent = await build_sql_agent()
 
     with open(r'./agent_output.txt', mode='w', encoding='utf-8') as f:
 
